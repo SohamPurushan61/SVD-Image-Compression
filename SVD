@@ -7,6 +7,9 @@ using InteractiveUtils
 # ╔═╡ b083ed50-f6ba-11ee-333a-0136951d71cc
 using LinearAlgebra, ImageView, Images
 
+# ╔═╡ 8c1fa63b-4982-4b1a-a798-fc438ce6b185
+# Need to reconstruct image using less singular values and then determine compression ratio
+
 # ╔═╡ 95e4c131-f453-4e71-b99e-2dc8f04363d6
 img = load("images.jpg")
 
@@ -37,7 +40,7 @@ sigma
 picMatrix = U * sigma * VT
 
 # ╔═╡ abb22821-5e9e-4185-adfd-49a816c64411
-# this is supposed to be the zero matrix if the original picture matrix equals the reconstructed SVD matrix
+# this is supposed to be the zero matrix if the original picture matrix equals the reconstructed SVD matrix 
 
 errorMatrix = mat - picMatrix
 
@@ -1531,6 +1534,7 @@ version = "1.4.1+1"
 """
 
 # ╔═╡ Cell order:
+# ╠═8c1fa63b-4982-4b1a-a798-fc438ce6b185
 # ╠═b083ed50-f6ba-11ee-333a-0136951d71cc
 # ╠═95e4c131-f453-4e71-b99e-2dc8f04363d6
 # ╠═7407d172-f91a-4d8b-a75a-80174f60bbf2
