@@ -8,6 +8,8 @@ using InteractiveUtils
 using LinearAlgebra, ImageView, Images
 
 # ╔═╡ 8c1fa63b-4982-4b1a-a798-fc438ce6b185
+# 590 Final Project Matthew Soham
+
 # Need to reconstruct image using less singular values and then determine compression ratio
 
 # ╔═╡ 95e4c131-f453-4e71-b99e-2dc8f04363d6
