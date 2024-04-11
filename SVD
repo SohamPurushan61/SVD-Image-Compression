@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.19.40
+# v0.19.36
 
 using Markdown
 using InteractiveUtils
@@ -11,6 +11,10 @@ using TestImages, LinearAlgebra, ImageView, Images, ImageMagick, FileIO
 # 590 Final Project Matthew Soham
 
 # Need to reconstruct image using less singular values and then determine compression ratio
+
+# ╔═╡ fb8e4c18-396e-4c5d-bae2-978c24f570f2
+img_orig = float64.(testimage("house.tif"))
+
 
 # ╔═╡ 95e4c131-f453-4e71-b99e-2dc8f04363d6
 img = load("board.tif")
@@ -31,7 +35,7 @@ U, S, VT = svd(mat)
 sigma = zeros(length(S), length(S))
 
 # ╔═╡ eaa95a80-e5a6-4a86-a1c9-08a8fbd7e756
-for i in range(1, 199)
+for i in range(1, length(S))
 	sigma[i,i] = S[i]
 end
 
@@ -63,8 +67,7 @@ end
 
 # ╔═╡ 9e8fb8f1-1bbf-4939-8090-16c4cf818da5
 function save_compressed_image(compressed_img, path)
-    # When saving as TIFF, you might consider specifying the compression method
-    # Here, no compression is applied to avoid compatibility issues
+    println("Data type and size of the image being saved: ", typeof(compressed_img), " ", size(compressed_img))
     save(path, Gray.(compressed_img))
 end
 
@@ -83,19 +86,14 @@ compress_image("board.tif", 50, "board2.tif")
 # ╔═╡ 01162a87-c350-478f-8bae-0f51d78501fe
 load("board2.tif")
 
+# ╔═╡ aa1e8ef1-9294-44b5-8770-6c4a0d3e4d59
+gray_img = Gray.(load("board.tif"))  # Convert to grayscale
+
+# ╔═╡ f433da18-5f26-4c71-b140-0830fd1895f9
+array_2d = Matrix{Float64}(gray_img)
+
 # ╔═╡ bcf4cec9-4a85-4917-b8e8-6043788f9735
-assess_ssim("board.tif", "board2.tif")
-
-# ╔═╡ 158310d1-5789-41df-aa74-3bd26262e090
-# ╠═╡ disabled = true
-#=╠═╡
-img_orig = float64.(testimage("board.tif"))
-
-  ╠═╡ =#
-
-# ╔═╡ fb8e4c18-396e-4c5d-bae2-978c24f570f2
-img_orig = float64.(testimage("house.tif"))
-
+assess_ssim(array_2d, load("board2.tif"))
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
@@ -119,7 +117,7 @@ TestImages = "~1.8.0"
 PLUTO_MANIFEST_TOML_CONTENTS = """
 # This file is machine-generated - editing it directly is not advised
 
-julia_version = "1.10.2"
+julia_version = "1.10.0"
 manifest_format = "2.0"
 project_hash = "44ea3a9f7eb3a0e1552e8a709b37be579e08d13c"
 
@@ -306,7 +304,7 @@ weakdeps = ["Dates", "LinearAlgebra"]
 [[deps.CompilerSupportLibraries_jll]]
 deps = ["Artifacts", "Libdl"]
 uuid = "e66e0078-7015-5450-92f7-15fbd957f2ae"
-version = "1.1.0+0"
+version = "1.0.5+1"
 
 [[deps.ComputationalResources]]
 git-tree-sha1 = "52cb3ec90e8a8bea0e62e275ba577ad0f74821f7"
@@ -985,7 +983,7 @@ weakdeps = ["Adapt"]
 [[deps.OpenBLAS_jll]]
 deps = ["Artifacts", "CompilerSupportLibraries_jll", "Libdl"]
 uuid = "4536629a-c528-5b80-bd46-f80d51c5b363"
-version = "0.3.23+4"
+version = "0.3.23+2"
 
 [[deps.OpenEXR]]
 deps = ["Colors", "FileIO", "OpenEXR_jll"]
@@ -1628,7 +1626,8 @@ version = "1.4.1+1"
 # ╠═bcde9f5e-6e32-4bda-a836-609fe5d3d032
 # ╠═8f2d1d4a-e8a6-4960-bcb8-0ac1e0bdb339
 # ╠═01162a87-c350-478f-8bae-0f51d78501fe
+# ╠═aa1e8ef1-9294-44b5-8770-6c4a0d3e4d59
+# ╠═f433da18-5f26-4c71-b140-0830fd1895f9
 # ╠═bcf4cec9-4a85-4917-b8e8-6043788f9735
-# ╠═158310d1-5789-41df-aa74-3bd26262e090
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
