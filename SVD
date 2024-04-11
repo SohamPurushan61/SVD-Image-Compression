@@ -5,7 +5,7 @@ using Markdown
 using InteractiveUtils
 
 # ╔═╡ b083ed50-f6ba-11ee-333a-0136951d71cc
-using LinearAlgebra, ImageView, Images, ImageMagick
+using TestImages, LinearAlgebra, ImageView, Images, ImageMagick, FileIO
 
 # ╔═╡ 8c1fa63b-4982-4b1a-a798-fc438ce6b185
 # 590 Final Project Matthew Soham
@@ -63,6 +63,8 @@ end
 
 # ╔═╡ 9e8fb8f1-1bbf-4939-8090-16c4cf818da5
 function save_compressed_image(compressed_img, path)
+    # When saving as TIFF, you might consider specifying the compression method
+    # Here, no compression is applied to avoid compatibility issues
     save(path, Gray.(compressed_img))
 end
 
@@ -75,26 +77,42 @@ function compress_image(image_path, k, save_path)
 end
 
 # ╔═╡ 8f2d1d4a-e8a6-4960-bcb8-0ac1e0bdb339
-compress_image("board.tif", 10, "board2.tif")
+compress_image("board.tif", 50, "board2.tif")
+
 
 # ╔═╡ 01162a87-c350-478f-8bae-0f51d78501fe
 load("board2.tif")
 
-# ╔═╡ 6c3ece1c-6803-49b4-8d1f-ec0eee4bb74f
-channelview(Gray.(load(picture)))
+# ╔═╡ bcf4cec9-4a85-4917-b8e8-6043788f9735
+assess_ssim("board.tif", "board2.tif")
+
+# ╔═╡ 158310d1-5789-41df-aa74-3bd26262e090
+# ╠═╡ disabled = true
+#=╠═╡
+img_orig = float64.(testimage("board.tif"))
+
+  ╠═╡ =#
+
+# ╔═╡ fb8e4c18-396e-4c5d-bae2-978c24f570f2
+img_orig = float64.(testimage("house.tif"))
+
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]
+FileIO = "5789e2e9-d7fb-5bc7-8068-2c6fae9b9549"
 ImageMagick = "6218d12a-5da1-5696-b52f-db25d2ecc6d1"
 ImageView = "86fae568-95e7-573e-a6b2-d8a6b900c9ef"
 Images = "916415d5-f1e6-5110-898d-aaa5f9f070e0"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+TestImages = "5e47fb64-e119-507b-a336-dd2b206d9990"
 
 [compat]
+FileIO = "~1.16.3"
 ImageMagick = "~1.2.1"
 ImageView = "~0.12.1"
 Images = "~0.26.1"
+TestImages = "~1.8.0"
 """
 
 # ╔═╡ 00000000-0000-0000-0000-000000000002
@@ -103,7 +121,7 @@ PLUTO_MANIFEST_TOML_CONTENTS = """
 
 julia_version = "1.10.2"
 manifest_format = "2.0"
-project_hash = "9cc7e24292e3a231b990200b236a8e62eaa017d3"
+project_hash = "44ea3a9f7eb3a0e1552e8a709b37be579e08d13c"
 
 [[deps.AbstractFFTs]]
 deps = ["LinearAlgebra"]
@@ -1298,6 +1316,12 @@ git-tree-sha1 = "5cf7606d6cef84b543b483848d4ae08ad9832b21"
 uuid = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
 version = "0.34.3"
 
+[[deps.StringDistances]]
+deps = ["Distances", "StatsAPI"]
+git-tree-sha1 = "5b2ca70b099f91e54d98064d5caf5cc9b541ad06"
+uuid = "88034a9c-02f8-509d-84a9-84ec65e18404"
+version = "0.11.3"
+
 [[deps.SuiteSparse]]
 deps = ["Libdl", "LinearAlgebra", "Serialization", "SparseArrays"]
 uuid = "4607b0f0-06f3-5cda-b6b1-a6196a1729e9"
@@ -1322,6 +1346,12 @@ deps = ["LinearAlgebra"]
 git-tree-sha1 = "1feb45f88d133a655e001435632f019a9a1bcdb6"
 uuid = "62fd8b95-f654-4bbd-a8a5-9c27f68ccd50"
 version = "0.1.1"
+
+[[deps.TestImages]]
+deps = ["AxisArrays", "ColorTypes", "FileIO", "ImageIO", "ImageMagick", "OffsetArrays", "Pkg", "StringDistances"]
+git-tree-sha1 = "0567860ec35a94c087bd98f35de1dddf482d7c67"
+uuid = "5e47fb64-e119-507b-a336-dd2b206d9990"
+version = "1.8.0"
 
 [[deps.ThreadingUtilities]]
 deps = ["ManualMemory"]
@@ -1581,6 +1611,7 @@ version = "1.4.1+1"
 # ╔═╡ Cell order:
 # ╠═8c1fa63b-4982-4b1a-a798-fc438ce6b185
 # ╠═b083ed50-f6ba-11ee-333a-0136951d71cc
+# ╠═fb8e4c18-396e-4c5d-bae2-978c24f570f2
 # ╠═95e4c131-f453-4e71-b99e-2dc8f04363d6
 # ╠═7407d172-f91a-4d8b-a75a-80174f60bbf2
 # ╠═41422293-8794-4ef0-ac9d-8091bf22fc40
@@ -1597,6 +1628,7 @@ version = "1.4.1+1"
 # ╠═bcde9f5e-6e32-4bda-a836-609fe5d3d032
 # ╠═8f2d1d4a-e8a6-4960-bcb8-0ac1e0bdb339
 # ╠═01162a87-c350-478f-8bae-0f51d78501fe
-# ╠═6c3ece1c-6803-49b4-8d1f-ec0eee4bb74f
+# ╠═bcf4cec9-4a85-4917-b8e8-6043788f9735
+# ╠═158310d1-5789-41df-aa74-3bd26262e090
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
