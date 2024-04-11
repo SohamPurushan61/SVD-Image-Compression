@@ -13,7 +13,7 @@ using LinearAlgebra, ImageView, Images, ImageMagick
 # Need to reconstruct image using less singular values and then determine compression ratio
 
 # ╔═╡ 95e4c131-f453-4e71-b99e-2dc8f04363d6
-img = load("images.jpg")
+img = load("board.tif")
 
 # ╔═╡ 7407d172-f91a-4d8b-a75a-80174f60bbf2
 channelview(img)
@@ -28,7 +28,7 @@ mat = channelview(grayPic)
 U, S, VT = svd(mat)
 
 # ╔═╡ 22522316-0504-4e17-96ad-0367a86281a4
-sigma = zeros(199,199)
+sigma = zeros(length(S), length(S))
 
 # ╔═╡ eaa95a80-e5a6-4a86-a1c9-08a8fbd7e756
 for i in range(1, 199)
@@ -75,13 +75,13 @@ function compress_image(image_path, k, save_path)
 end
 
 # ╔═╡ 8f2d1d4a-e8a6-4960-bcb8-0ac1e0bdb339
-compress_image("images.jpg", 10, "images2.jpg")
+compress_image("board.tif", 10, "board2.tif")
 
 # ╔═╡ 01162a87-c350-478f-8bae-0f51d78501fe
-load("images2.jpg")
+load("board2.tif")
 
 # ╔═╡ 6c3ece1c-6803-49b4-8d1f-ec0eee4bb74f
-channelview(Gray.(load("images2.jpg")))
+channelview(Gray.(load(picture)))
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
