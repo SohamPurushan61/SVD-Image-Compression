@@ -5,7 +5,7 @@ using Markdown
 using InteractiveUtils
 
 # ╔═╡ b083ed50-f6ba-11ee-333a-0136951d71cc
-using LinearAlgebra, ImageView, Images
+using LinearAlgebra, ImageView, Images, ImageMagick
 
 # ╔═╡ 8c1fa63b-4982-4b1a-a798-fc438ce6b185
 # 590 Final Project Matthew Soham
@@ -46,12 +46,55 @@ picMatrix = U * sigma * VT
 
 errorMatrix = mat - picMatrix
 
+# ╔═╡ c070fac2-7b39-4f2f-bd92-33efeb8b62a0
+function load_grayscale_image(path)
+    img = load(path) # Load the image
+    img_gray = Gray.(img) # Convert to grayscale
+    return img_gray
+end
+
+# ╔═╡ bb36abe4-4f58-4a16-99d2-f7442bde5d95
+function svd_compression(image, k)
+    U, S, V = svd(Float64.(image))
+    # Reconstruct the image using only the first k singular values
+    img_compressed = U[:, 1:k] * Diagonal(S[1:k]) * V[:, 1:k]'
+    return img_compressed
+end
+
+# ╔═╡ 9e8fb8f1-1bbf-4939-8090-16c4cf818da5
+function save_compressed_image(compressed_img, path)
+    save(path, Gray.(compressed_img))
+end
+
+# ╔═╡ bcde9f5e-6e32-4bda-a836-609fe5d3d032
+function compress_image(image_path, k, save_path)
+    img_gray = load_grayscale_image(image_path)
+    compressed_img = svd_compression(img_gray, k)
+    save_compressed_image(compressed_img, save_path)
+    println("Image compression completed. Compressed image saved to: ", save_path)
+end
+
+# ╔═╡ 8f2d1d4a-e8a6-4960-bcb8-0ac1e0bdb339
+compress_image("images.jpg", 10, "images2.jpg")
+
+# ╔═╡ 01162a87-c350-478f-8bae-0f51d78501fe
+load("images2.jpg")
+
+# ╔═╡ 6c3ece1c-6803-49b4-8d1f-ec0eee4bb74f
+channelview(Gray.(load("images2.jpg")))
+
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]
+ImageMagick = "6218d12a-5da1-5696-b52f-db25d2ecc6d1"
 ImageView = "86fae568-95e7-573e-a6b2-d8a6b900c9ef"
 Images = "916415d5-f1e6-5110-898d-aaa5f9f070e0"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+
+[compat]
+ImageMagick = "~1.2.1"
+ImageView = "~0.12.1"
+Images = "~0.26.1"
 """
 
 # ╔═╡ 00000000-0000-0000-0000-000000000002
@@ -60,7 +103,7 @@ PLUTO_MANIFEST_TOML_CONTENTS = """
 
 julia_version = "1.10.2"
 manifest_format = "2.0"
-project_hash = "34f2f48cb1a494b1fa84c26977fb66d5ca5128e5"
+project_hash = "9cc7e24292e3a231b990200b236a8e62eaa017d3"
 
 [[deps.AbstractFFTs]]
 deps = ["LinearAlgebra"]
@@ -1548,5 +1591,12 @@ version = "1.4.1+1"
 # ╠═c12d6e14-4a2a-4c13-ae1d-18f9d82a61ee
 # ╠═75367869-ce9b-4dd3-bad0-a3b32d836d37
 # ╠═abb22821-5e9e-4185-adfd-49a816c64411
+# ╠═c070fac2-7b39-4f2f-bd92-33efeb8b62a0
+# ╠═bb36abe4-4f58-4a16-99d2-f7442bde5d95
+# ╠═9e8fb8f1-1bbf-4939-8090-16c4cf818da5
+# ╠═bcde9f5e-6e32-4bda-a836-609fe5d3d032
+# ╠═8f2d1d4a-e8a6-4960-bcb8-0ac1e0bdb339
+# ╠═01162a87-c350-478f-8bae-0f51d78501fe
+# ╠═6c3ece1c-6803-49b4-8d1f-ec0eee4bb74f
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
