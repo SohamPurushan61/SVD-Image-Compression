@@ -5,7 +5,7 @@ using Markdown
 using InteractiveUtils
 
 # ╔═╡ b083ed50-f6ba-11ee-333a-0136951d71cc
-using Plots,TestImages, LinearAlgebra, ImageView, Images, ImageMagick, FileIO
+using ImageQualityIndexes, Plots,TestImages, LinearAlgebra, ImageView, Images, ImageMagick, FileIO
 
 # ╔═╡ 8c1fa63b-4982-4b1a-a798-fc438ce6b185
 # 590 Final Project Matthew Soham
@@ -167,17 +167,61 @@ function plot_cumulative_singular_values(S)
          legend=false, markershape=:circle, color=:red)
 end
 
+# ╔═╡ c28b0a38-41e8-4cc5-9856-2e7c46b3e8e1
+function plot_ssim_vs_singular_values(original_path::String, compressed_path::String)
+    Plots.gr()
+	# Load both images and convert them to grayscale
+    original_img = Gray.(load(original_path))
+    compressed_img = Gray.(load(compressed_path))
+    
+    # Convert images to matrices for SVD
+    original_matrix = channelview(original_img)
+    compressed_matrix = channelview(compressed_img)
+    
+    # Perform SVD on the compressed image matrix
+    U, S, Vt = svd(compressed_matrix)
+    
+    # Array to store SSIM values
+    ssim_values = []
+    num_singular_values = 1:10:length(S)  # Adjust range based on total singular values
+    
+    # Reconstruct the compressed image using increasing numbers of singular values
+    for k in num_singular_values
+        # Reconstruct image from the first k singular values
+        reconstructed_matrix = U[:, 1:k] * Diagonal(S[1:k]) * Vt[1:k, :]
+        reconstructed_img = clamp.(colorview(Gray, reconstructed_matrix), 0, 1)  # Ensure pixel values are clamped
+        
+        # Calculate SSIM between the original and the reconstructed image
+        ssim_score = assess_ssim(original_img, reconstructed_img)
+        push!(ssim_values, ssim_score)
+    end
+    
+    # Plot SSIM values against the number of singular values used
+    plot = Plots.plot!(num_singular_values, ssim_values, title="SSIM vs. Number of Singular Values",
+         xlabel="Number of Singular Values", ylabel="SSIM", ylim=(0, 1), legend=false,
+         markershape=:circle, markersize=8, linewidth=2, linecolor=:blue, grid=true)
+
+    # Enhance the size of the plot for better visibility
+    Plots.plot!(size=(800, 600))
+
+    display(plot)
+end
+
 # ╔═╡ 50577bd5-00ea-47e1-a14d-7e4a49a6485e
 plot_singular_values(S)
 
 # ╔═╡ 00810fbe-1475-4d24-9c2b-9711ee8c1dec
  plot_cumulative_singular_values(S)
 
+# ╔═╡ c03f3a5d-e043-4ac4-a27d-dd3a84459b7e
+display(plot_ssim_vs_singular_values("board.tif", "board2.tif"))
+
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
 [deps]
 FileIO = "5789e2e9-d7fb-5bc7-8068-2c6fae9b9549"
 ImageMagick = "6218d12a-5da1-5696-b52f-db25d2ecc6d1"
+ImageQualityIndexes = "2996bd0c-7a13-11e9-2da2-2f5ce47296a9"
 ImageView = "86fae568-95e7-573e-a6b2-d8a6b900c9ef"
 Images = "916415d5-f1e6-5110-898d-aaa5f9f070e0"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
@@ -187,6 +231,7 @@ TestImages = "5e47fb64-e119-507b-a336-dd2b206d9990"
 [compat]
 FileIO = "~1.16.3"
 ImageMagick = "~1.2.1"
+ImageQualityIndexes = "~0.3.7"
 ImageView = "~0.12.1"
 Images = "~0.26.1"
 Plots = "~1.40.3"
@@ -199,7 +244,7 @@ PLUTO_MANIFEST_TOML_CONTENTS = """
 
 julia_version = "1.10.2"
 manifest_format = "2.0"
-project_hash = "2ee24c55396ff5c12d8cf6e179322a94148a68a5"
+project_hash = "45e2600d6800bd899a1aa0e681fae5b0c8af055f"
 
 [[deps.AbstractFFTs]]
 deps = ["LinearAlgebra"]
@@ -2098,7 +2143,9 @@ version = "1.4.1+1"
 # ╠═c4df29f7-3eca-4082-94fd-bfe27ea8b6c6
 # ╠═75ce4821-3711-41e9-b0f1-e8139c54de08
 # ╠═a40c6ac7-d37f-44f6-95ce-94c59346fad8
+# ╠═c28b0a38-41e8-4cc5-9856-2e7c46b3e8e1
 # ╠═50577bd5-00ea-47e1-a14d-7e4a49a6485e
 # ╠═00810fbe-1475-4d24-9c2b-9711ee8c1dec
+# ╠═c03f3a5d-e043-4ac4-a27d-dd3a84459b7e
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
