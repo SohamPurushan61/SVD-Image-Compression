@@ -76,8 +76,8 @@ function save_compressed_image(compressed_img, path)
 end
 
 # ╔═╡ bcde9f5e-6e32-4bda-a836-609fe5d3d032
-function compress_image(image_path, k, save_path)
-    img_gray = load_grayscale_image(image_path)
+function compress_image(img_gray, k, save_path)
+    #img_gray = load_grayscale_image(image_path)
     compressed_img = svd_compression(img_gray, k)
     save_compressed_image(compressed_img, save_path)
     println("Image compression completed. Compressed image saved to: ", save_path)
@@ -228,63 +228,24 @@ pm = convert(Array{Float64}, testimage("bark_512"))
 # ╔═╡ dbc64bd8-0ff4-43ac-b98b-421e4d85696f
 testimage("bark_512")
 
-# ╔═╡ ea55da1c-088e-4bad-8df6-75fd2c16db1f
-d = Normal(0, 1)
-
-# ╔═╡ f044abbd-327f-4def-96fc-525c96471e6a
-td = truncated(d, 0.0, 100)
-
-# ╔═╡ de74a431-3a86-40b0-820e-b9c0d8c735b1
-gaussianRandomMatrix = rand(td, (512, 512))
-
-# ╔═╡ e3f4cf75-50c9-4339-a6e1-02458a42fc3d
-approx = pm * gaussianRandomMatrix
-
-# ╔═╡ bd91c202-646f-45e8-bb78-dd1a57e65f2b
-Q, R = qr(approx)
-
-# ╔═╡ 508d17cd-0929-4b02-9a78-b09670603c55
-matB = Q'*pm
-
-# ╔═╡ 3a41ba33-7c48-4818-a69b-e1d8763a6af8
-U2, S2, VT2 = svd(matB)
-
-# ╔═╡ a823e9fe-bb62-4101-b758-73be575ee110
-bigU = Q * U2
-
-# ╔═╡ 0834024a-5766-49a6-a873-2b083400985d
-randMat = bigU* Diagonal(S2)* VT2
-
-# ╔═╡ 33e077f0-5bd3-4149-a5b6-265204d1a63b
-for i in 1:512
-    for j in 1:512
-        if randMat[i, j] < 0
-            randMat[i, j] = abs(randMat[i, j])
-        end
-		if randMat[i, j] < eps(Float64)
-            randMat[i, j] = 0
-        end
-    end
-end
-
-# ╔═╡ 70a17566-7dad-47fb-a819-9d268952cfe9
-randMat
-
 # ╔═╡ 0900a02c-8db7-4f69-b004-a9db5799e6ba
-function randomized_svd(A, k)
-    n, m = size(A)
-    Omega = randn(m, k)
-    Y = A * Omega
+function rsvd(X, k)
+    m, n = size(X)
+    Omega = rand(n, k)
+    Y = X * Omega
     Q, R = qr(Y)
-    B = Q' * A
+    Qm = Matrix(Q)
+    B = Qm' * X
     Uhat, S, Vt = svd(B)
-    U = Q * Uhat
-    return U[:, 1:k], S[1:k], Vt[:, 1:k]
+    Uk = Uhat[:, 1:k]
+    Vk = Vt'[1:k, :]
+    U = Qm * Uk
+    return U, Diagonal(S), Vk
 end
 
 # ╔═╡ a3ece32f-5fdc-4b8f-aa69-63e273a9ea7d
-function reconstruct_image(U, S, Vt)
-    return U * Diagonal(S) * Vt
+function reconstruct_image(P, R, N)
+    return P * Diagonal(R) * N
 end
 
 # ╔═╡ ae40ac02-23fe-47a9-a983-a37cf0ecf7f0
@@ -294,24 +255,40 @@ function display_images(original, compressed)
     plot(p1, p2, layout=(1, 2), size=(800, 400))
 end
 
+# ╔═╡ 905df80d-51fc-449c-9d09-3c374ed8de1c
+randImg = Gray.(load("orbit.0036.tif"))
+
 # ╔═╡ 0562b8e4-583b-42eb-a990-59d3faaa6ed0
 begin
-
 	# Load and preprocess the image
-	img_matrix = convert(Array{Float64}, testimage("bark_512"))
+	img_matrix = convert(Array{Float64}, randImg)
 	
 	# Compute the randomized SVD with k ranks
-	U3, S3, Vt3 = randomized_svd(img_matrix, 20)  # Using k=50 for example
+	U3, S3, Vt3 = rsvd(img_matrix, 20)  # Using k=50 for example
 	
 	# Reconstruct the image using the top k components
-	compressed_img = reconstruct_image(U3, S3, Vt3')
-	
+	compressed_img = reconstruct_image(U3, S3, Vt3)
 	# Display both the original and compressed image
 	display_images(img_matrix, compressed_img)
 end
 
-# ╔═╡ 8cb0e2b6-5495-403f-8b0d-90f287df8778
-newImg = Gray.(randMat)
+# ╔═╡ 4852403a-8e43-49d6-b2bd-e13fd683ea42
+compress_image(Gray.(load("orbit.0036.tif")), 20, "orbit2.tif")
+
+# ╔═╡ 8baf65e7-fe91-4604-8c88-35805132506d
+load("orbit2.tif")
+
+# ╔═╡ 093cdfee-7049-4faa-bd9f-d997d0c5365c
+assess_ssim(compressed_img, img_matrix)
+
+# ╔═╡ c7a98071-3482-4788-8499-d311ece8934d
+assess_ssim(load("orbit2.tif"), img_matrix)
+
+# ╔═╡ 854b7bca-bb0d-4ff6-875d-0ff1c5dd8167
+e2mat = img_matrix - compressed_img
+
+# ╔═╡ 1421fc40-b729-4ac8-9168-b7d1b4bc879a
+e3mat = img_matrix - convert(Array{Float64}, Gray.(load("orbit2.tif")))
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001
 PLUTO_PROJECT_TOML_CONTENTS = """
@@ -2270,21 +2247,16 @@ version = "1.4.1+1"
 # ╠═ec5879d5-033b-4031-b291-3412a0e9499e
 # ╠═1b0b62bb-39dd-4fcb-a22d-e17f21a6d327
 # ╠═dbc64bd8-0ff4-43ac-b98b-421e4d85696f
-# ╠═ea55da1c-088e-4bad-8df6-75fd2c16db1f
-# ╠═f044abbd-327f-4def-96fc-525c96471e6a
-# ╠═de74a431-3a86-40b0-820e-b9c0d8c735b1
-# ╠═e3f4cf75-50c9-4339-a6e1-02458a42fc3d
-# ╠═bd91c202-646f-45e8-bb78-dd1a57e65f2b
-# ╠═508d17cd-0929-4b02-9a78-b09670603c55
-# ╠═3a41ba33-7c48-4818-a69b-e1d8763a6af8
-# ╠═a823e9fe-bb62-4101-b758-73be575ee110
-# ╠═0834024a-5766-49a6-a873-2b083400985d
-# ╠═33e077f0-5bd3-4149-a5b6-265204d1a63b
-# ╠═70a17566-7dad-47fb-a819-9d268952cfe9
 # ╠═0900a02c-8db7-4f69-b004-a9db5799e6ba
 # ╠═a3ece32f-5fdc-4b8f-aa69-63e273a9ea7d
 # ╠═ae40ac02-23fe-47a9-a983-a37cf0ecf7f0
+# ╠═905df80d-51fc-449c-9d09-3c374ed8de1c
 # ╠═0562b8e4-583b-42eb-a990-59d3faaa6ed0
-# ╠═8cb0e2b6-5495-403f-8b0d-90f287df8778
+# ╠═4852403a-8e43-49d6-b2bd-e13fd683ea42
+# ╠═8baf65e7-fe91-4604-8c88-35805132506d
+# ╠═093cdfee-7049-4faa-bd9f-d997d0c5365c
+# ╠═c7a98071-3482-4788-8499-d311ece8934d
+# ╠═854b7bca-bb0d-4ff6-875d-0ff1c5dd8167
+# ╠═1421fc40-b729-4ac8-9168-b7d1b4bc879a
 # ╟─00000000-0000-0000-0000-000000000001
 # ╟─00000000-0000-0000-0000-000000000002
