@@ -1,0 +1,75 @@
+import numpy as np
+from scipy.fftpack import dct, idct
+from PIL import Image
+from skimage.metrics import peak_signal_noise_ratio as psnr
+import matplotlib.pyplot as plt
+
+def block_processing(image, block_size):
+    """ Process the image by blocks and apply DCT and adaptive quantization. """
+    rows, cols = image.shape
+    compressed_image = np.zeros_like(image)
+    
+    for i in range(0, rows, block_size):
+        for j in range(0, cols, block_size):
+            block = image[i:i+block_size, j:j+block_size]
+            processed_block = process_block(block)
+            compressed_image[i:i+block_size, j:j+block_size] = processed_block
+            
+    return compressed_image
+
+def process_block(block):
+    """ Perform DCT, adaptive quantization, and inverse DCT on a block. """
+    dct_block = dct(dct(block.T, norm='ortho').T, norm='ortho')
+    quantized_block = adaptive_quantization(dct_block)
+    idct_block = idct(idct(quantized_block.T, norm='ortho').T, norm='ortho')
+    return idct_block
+
+def adaptive_quantization(dct_block):
+    """ Apply adaptive quantization based on the variance of the block. """
+    variance = np.var(dct_block)
+    threshold = dynamic_threshold(variance)
+    quantized_block = np.where(abs(dct_block) > threshold, dct_block, 0)
+    return quantized_block
+
+def dynamic_threshold(variance):
+    """ Calculate a dynamic threshold based on the variance using a non-linear formula. """
+    if variance > 100:
+        return 10  # less aggressive quantization for high variance
+    else:
+        return 20 + (100 - variance) * 0.1  # more aggressive quantization for low variance
+
+def load_image(image_path):
+    """ Load an image and convert it to grayscale. """
+    image = Image.open(image_path).convert('L')
+    image_np = np.array(image, dtype=np.float32)
+    return image_np
+
+def compute_metrics(original_image, compressed_image):
+    """ Compute and print PSNR between the original and compressed images. """
+    psnr_value = psnr(original_image, compressed_image, data_range=original_image.max() - original_image.min())
+    print(f"PSNR: {psnr_value}")
+
+def plot_images(original_image, compressed_image):
+    """ Plot the original and compressed images. """
+    fig, ax = plt.subplots(1, 2, figsize=(12, 6))
+
+    ax[0].imshow(original_image, cmap='gray')
+    ax[0].set_title('Original Image')
+    ax[0].axis('off')
+
+    ax[1].imshow(compressed_image, cmap='gray')
+    ax[1].set_title('Compressed Image')
+    ax[1].axis('off')
+
+    plt.show()
+
+# Main code
+image_path = 'C:/Users/soham/Pictures/Math 590 Project/joshua-j-cotten-8kXdIXob78U-unsplash.jpg'
+image_np = load_image(image_path)
+compressed_image = block_processing(image_np, block_size=8)
+
+# Compute metrics
+compute_metrics(image_np, compressed_image)
+
+# Plot images
+plot_images(image_np, compressed_image)
