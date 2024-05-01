@@ -10,8 +10,6 @@ using ImageQualityIndexes, Plots,TestImages, LinearAlgebra, ImageView, Images, I
 # ╔═╡ 8c1fa63b-4982-4b1a-a798-fc438ce6b185
 # 590 Final Project Matthew Soham
 
-# Need to reconstruct image using less singular values and then determine compression ratio
-
 # ╔═╡ 95e4c131-f453-4e71-b99e-2dc8f04363d6
 img = load("board.tif")
 
@@ -46,15 +44,6 @@ picMatrix = U * sigma * VT
 
 errorMatrix = mat - picMatrix
 
-# ╔═╡ 0eb18b6e-6e36-4005-9eb5-443755ad6225
-function calculate_svd_memory(U, S, VT)
-    U_memory = size(U, 1) * size(U, 2) * sizeof(eltype(U))
-    S_memory = length(S) * sizeof(eltype(S))
-    VT_memory = size(VT, 1) * size(VT, 2) * sizeof(eltype(VT))
-    total_memory = U_memory + S_memory + VT_memory
-    return total_memory
-end
-
 # ╔═╡ c070fac2-7b39-4f2f-bd92-33efeb8b62a0
 function load_grayscale_image(path)
     img = load(path)
@@ -83,38 +72,19 @@ function compress_image(img_gray, k, save_path)
     println("Image compression completed. Compressed image saved to: ", save_path)
 end
 
+# ╔═╡ a7f2c155-0f2d-436c-a7f5-a0da4eb5e24a
+function compress_image2(image_path, k, save_path)
+    img_gray = load_grayscale_image(image_path)
+    compressed_img = svd_compression(img_gray, k)
+    save_compressed_image(compressed_img, save_path)
+    println("Image compression completed. Compressed image saved to: ", save_path)
+end
+
 # ╔═╡ 8f2d1d4a-e8a6-4960-bcb8-0ac1e0bdb339
-compress_image("board.tif", 50, "board2.tif")
+compress_image2("board.tif", 50, "board2.tif")
 
 # ╔═╡ 01162a87-c350-478f-8bae-0f51d78501fe
 load("board2.tif") # (648x50) + 50 + (50x306) = 
-
-# ╔═╡ 87573d17-35de-4f9e-8c50-672c7c8f18cc
- #might continue this later for the final writeup
-function chroma_subsampling_420(image_path::String)
-    img = load(image_path)
-    img_ycbcr = convert.(YCbCr{Float32}, float.(img))
-    
-    Y = Array{Float32}(undef, size(img_ycbcr))
-    Cb = Array{Float32}(undef, size(img_ycbcr))
-    Cr = Array{Float32}(undef, size(img_ycbcr))
-    
-    for j in 1:size(img_ycbcr, 2)
-        for i in 1:size(img_ycbcr, 1)
-            Y[i, j] = img_ycbcr[i, j].y
-            Cb[i, j] = img_ycbcr[i, j].cb
-            Cr[i, j] = img_ycbcr[i, j].cr
-        end
-    end
-
-    Cb_subsampled = Cb[1:2:end, 1:2:end]
-    Cr_subsampled = Cr[1:2:end, 1:2:end]
-
-    return Y, Cb_subsampled, Cr_subsampled
-end
-
-# ╔═╡ c4df29f7-3eca-4082-94fd-bfe27ea8b6c6
-Y, Cb, Cr = chroma_subsampling_420("board.tif")
 
 # ╔═╡ 75ce4821-3711-41e9-b0f1-e8139c54de08
 function plot_singular_values(S)    
@@ -129,95 +99,11 @@ function plot_cumulative_singular_values(S)
          legend=false, markershape=:circle, color=:red)
 end
 
-# ╔═╡ c28b0a38-41e8-4cc5-9856-2e7c46b3e8e1
-# Want to visualize structural similarity based on # of singular values to see the relationship
-# Can't get this to work
-function plot_ssim_vs_singular_values(original_path, compressed_path)
-    original_matrix = channelview(original_path)
-    compressed_matrix = channelview(compressed_path)
-
-    U, S, Vt = svd(compressed_matrix)
-
-    ssim_values = Float64[]
-    max_singular_values = length(S)
-    step_size = 10
-
-    for k in 1:step_size:max_singular_values
-        reconstructed_matrix = U[:, 1:k] * Diagonal(S[1:k]) * Vt[1:k, :]
-        reconstructed_img = clamp.(colorview(Gray, reconstructed_matrix), 0, 1)
-        ssim_score = assess_ssim(original_path, compressed_path)
-        push!(ssim_values, ssim_score)
-    end
-
-    plot(1:step_size:max_singular_values, ssim_values, title="SSIM vs. Number of Singular Values",
-         xlabel="Number of Singular Values", ylabel="SSIM", ylim=(0, 1), legend=false,
-         markershape=:circle, markersize=8, linewidth=2, linecolor=:blue, grid=true)
-
-    display(plot)
-end
-
 # ╔═╡ 50577bd5-00ea-47e1-a14d-7e4a49a6485e
 plot_singular_values(S)
 
 # ╔═╡ 00810fbe-1475-4d24-9c2b-9711ee8c1dec
  plot_cumulative_singular_values(S)
-
-# ╔═╡ c03f3a5d-e043-4ac4-a27d-dd3a84459b7e
-plot_ssim_vs_singular_values(Gray.(load("board.tif")), Gray.(load("board2.tif")))
-
-# ╔═╡ 688e700f-7399-4510-a243-39cf76e29eee
-# Wavelet Transform
-
-image = testimage("cameraman")
-
-# ╔═╡ 8f6db7ca-2b9a-48ab-9689-d6b80b250134
-gray_image = Gray.(image)
-
-# Select a Daubechies wavelet. The argument "4" denotes the number of vanishing moments (db4)
-
-# ╔═╡ 7202bf96-387c-47a0-b8bd-14ffac403e3b
-cameraman = channelview(gray_image)
-
-# ╔═╡ b24cb4d0-e1e2-42eb-a789-4f32e2420f57
-signal = cameraman[:, 1]
-
-# ╔═╡ 02b4ccd5-cdbd-4516-9386-bfdeb8c19987
-begin
-	# Daubechies D4 wavelet coefficients
-	h0 = (1 + sqrt(3)) / (4 * sqrt(2))
-	h1 = (3 + sqrt(3)) / (4 * sqrt(2))
-	h2 = (3 - sqrt(3)) / (4 * sqrt(2))
-	h3 = (1 - sqrt(3)) / (4 * sqrt(2))
-	
-	# Decomposition low-pass and high-pass filters
-	dec_lo = [h0, h1, h2, h3]
-	dec_hi = [h3, -h2, h1, -h0]
-	
-	rec_lo = reverse(dec_lo)
-	rec_hi = [-h0, h1, -h2, h3]
-end
-
-# ╔═╡ 2e4a354f-03c8-4e07-9565-0bd38df56407
-function wavelet_transform(signal, filter_lo, filter_hi)
-    # Apply convolution with the low-pass and high-pass filters
-    low_passed = conv(signal, filter_lo)[2:end-1]  # Convolution and remove padding
-    high_passed = conv(signal, filter_hi)[2:end-1] # Same for high-pass
-
-    # Downsampling
-    downsampled_low = low_passed[1:2:end]
-    downsampled_high = high_passed[1:2:end]
-
-    return downsampled_low, downsampled_high
-end
-
-# ╔═╡ bdec4166-df5d-44b8-803a-ee08f2e9f01b
-begin
-	# Apply the wavelet transform
-	approx_coeffs, detail_coeffs = wavelet_transform(cameraman, dec_lo, dec_hi)
-	
-	println("Approximation Coefficients: ", approx_coeffs)
-	println("Detail Coefficients: ", detail_coeffs)
-end
 
 # ╔═╡ ec5879d5-033b-4031-b291-3412a0e9499e
 # https://gregorygundersen.com/blog/2019/01/17/randomized-svd/#phillips1998feret
@@ -231,7 +117,7 @@ testimage("bark_512")
 # ╔═╡ 0900a02c-8db7-4f69-b004-a9db5799e6ba
 function rsvd(X, k)
     m, n = size(X)
-    Omega = rand(n, k)
+    Omega = randn(n, k)
     Y = X * Omega
     Q, R = qr(Y)
     Qm = Matrix(Q)
@@ -2222,28 +2108,17 @@ version = "1.4.1+1"
 # ╠═eaa95a80-e5a6-4a86-a1c9-08a8fbd7e756
 # ╠═75367869-ce9b-4dd3-bad0-a3b32d836d37
 # ╠═abb22821-5e9e-4185-adfd-49a816c64411
-# ╠═0eb18b6e-6e36-4005-9eb5-443755ad6225
 # ╠═c070fac2-7b39-4f2f-bd92-33efeb8b62a0
 # ╠═bb36abe4-4f58-4a16-99d2-f7442bde5d95
 # ╠═9e8fb8f1-1bbf-4939-8090-16c4cf818da5
 # ╠═bcde9f5e-6e32-4bda-a836-609fe5d3d032
+# ╠═a7f2c155-0f2d-436c-a7f5-a0da4eb5e24a
 # ╠═8f2d1d4a-e8a6-4960-bcb8-0ac1e0bdb339
 # ╠═01162a87-c350-478f-8bae-0f51d78501fe
-# ╠═87573d17-35de-4f9e-8c50-672c7c8f18cc
-# ╠═c4df29f7-3eca-4082-94fd-bfe27ea8b6c6
 # ╠═75ce4821-3711-41e9-b0f1-e8139c54de08
 # ╠═a40c6ac7-d37f-44f6-95ce-94c59346fad8
-# ╠═c28b0a38-41e8-4cc5-9856-2e7c46b3e8e1
 # ╠═50577bd5-00ea-47e1-a14d-7e4a49a6485e
 # ╠═00810fbe-1475-4d24-9c2b-9711ee8c1dec
-# ╠═c03f3a5d-e043-4ac4-a27d-dd3a84459b7e
-# ╠═688e700f-7399-4510-a243-39cf76e29eee
-# ╠═8f6db7ca-2b9a-48ab-9689-d6b80b250134
-# ╠═7202bf96-387c-47a0-b8bd-14ffac403e3b
-# ╠═b24cb4d0-e1e2-42eb-a789-4f32e2420f57
-# ╠═02b4ccd5-cdbd-4516-9386-bfdeb8c19987
-# ╠═2e4a354f-03c8-4e07-9565-0bd38df56407
-# ╠═bdec4166-df5d-44b8-803a-ee08f2e9f01b
 # ╠═ec5879d5-033b-4031-b291-3412a0e9499e
 # ╠═1b0b62bb-39dd-4fcb-a22d-e17f21a6d327
 # ╠═dbc64bd8-0ff4-43ac-b98b-421e4d85696f
